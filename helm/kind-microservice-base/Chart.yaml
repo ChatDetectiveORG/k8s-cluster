@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kind-microservice-base
+description: Base library chart for ChatDetective microservices
+type: library
+version: 0.1.0
+

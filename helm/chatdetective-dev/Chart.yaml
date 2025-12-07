@@ -1,0 +1,27 @@
+apiVersion: v2
+name: chatdetective-dev
+version: 0.1.0
+keywords:
+  - chatdetective
+  - development
+  - Helm
+  - Kubernetes
+  - kind
+sources:
+  - https://github.com/ChatDetectiveORG
+dependencies:
+  # Internal dependencies
+  - name: kind-microservice-base
+    version: "0.1.0"
+    repository: "file://../kind-microservice-base"
+
+  # External dependencies
+  - name: postgresql
+    version: "15.5.2"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: postgresql.enabled
+  
+  - name: rabbitmq
+    version: "16.0.14"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: rabbitmq.enabled

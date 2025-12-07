@@ -1,0 +1,12 @@
+{{- if index .Values "api-gateway" "enabled" }}
+{{- $values := index .Values "api-gateway" }}
+{{- $context := dict "Values" $values "Chart" (dict "Name" "api-gateway") "Release" .Release }}
+
+{{ include "kind-microservice-base.deployment" $context }}
+
+{{ include "kind-microservice-base.service" $context }}
+
+{{ include "kind-microservice-base.ingress" $context }}
+
+{{- end }}
+

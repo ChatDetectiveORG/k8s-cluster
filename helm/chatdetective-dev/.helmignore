@@ -1,0 +1,11 @@
+.git/
+.gitignore
+
+*.bak
+*~
+
+.idea/
+.vscode/
+*.md
+
+.DS_Store

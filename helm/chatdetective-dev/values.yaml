@@ -1,0 +1,74 @@
+# Default values (overrides in values-local.yaml)
+
+
+postgresql:
+  enabled: true
+  auth:
+    username: chatdetective
+    password: "123" 
+    database: chatdetective
+    port: 5432
+    host: chatdetective-dev-postgresql
+  primary:
+    persistence:
+      enabled: false
+
+rabbitmq:
+  enabled: true
+  auth:
+    username: chatdetective
+    password: "123"
+    port: 5672
+    host: chatdetective-dev-rabbitmq
+  persistence:
+    enabled: false
+
+
+api-gateway:
+  enabled: true
+  replicaCount: 1
+  image:
+    registry: localhost:5001
+    repository: chatdetective/api-gateway
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  ingress:
+    enabled: true
+    className: nginx
+    host: host
+    pathType: Prefix
+    path: /
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+  env:
+    - name: RABBITMQ_URL
+      value: "amqp://chatdetective:123@chatdetective-dev-rabbitmq:5672"
+    
+    - name: POSTGRES_USER
+      value: ""
+    - name: POSTGRES_PASSWORD
+      value: ""
+    - name: POSTGRES_DB
+      value: ""
+    - name: POSTGRES_PORT
+      value: ""
+    - name: POSTGRES_HOST
+      value: ""
+    
+    - name: TELEGRAM_BOT_TOKEN
+      value: ""
+    - name: TELEGRAM_BOT_PUBLIC_URL
+      value: ""
+    - name: TELEGRAM_BOT_WEBHOOK_PORT
+      value: ""
+    
+    - name: DOCKER_TARGET
+      value: "dev"
+    - name: PROJECT_NAME
+      value: ""

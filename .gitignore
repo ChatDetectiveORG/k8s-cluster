@@ -1,0 +1,17 @@
+*.tgz
+charts/
+Chart.lock
+
+.vscode/
+.idea/
+*~
+
+.DS_Store
+Thumbs.db
+
+*.tmp
+*.bak
+*.log
+
+**/values-local.yaml
+**/values-*.local.yaml
