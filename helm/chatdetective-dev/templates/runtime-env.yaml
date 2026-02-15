@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-runtime-env" .Release.Name }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  # PostgreSQL (bitnami/postgresql subchart)
+  # NOTE: code currently uses DB_HOST/DB_PORT for Addr, not POSTGRES_HOST/POSTGRES_PORT.
+  DB_HOST: {{ printf "%s-postgresql" .Release.Name | quote }}
+  DB_PORT: "5432"
+  POSTGRES_HOST: {{ printf "%s-postgresql" .Release.Name | quote }}
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: {{ .Values.postgresql.auth.username | quote }}
+  POSTGRES_PASSWORD: {{ .Values.postgresql.auth.password | quote }}
+  POSTGRES_DB: {{ .Values.postgresql.auth.database | quote }}
+
+  # RabbitMQ (bitnami/rabbitmq subchart)
+  RABBITMQ_HOST: {{ printf "%s-rabbitmq" .Release.Name | quote }}
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_URL: {{ printf "amqp://%s:%s@%s-rabbitmq:5672" .Values.rabbitmq.auth.username .Values.rabbitmq.auth.password .Release.Name | quote }}
+
+  # Redis (internal template)
+  REDIS_HOST: {{ printf "%s-redis" .Release.Name | quote }}
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: {{ .Values.redis.auth.password | default "" | quote }}
+  REDIS_DB: {{ .Values.redis.db | default 0 | toString | quote }}
+
+  # Optional runtime tuning
+  NUM_ROUTING_GOROUTINES: {{ .Values.runtime.numRoutingGoroutines | default 4 | toString | quote }}
+
+  # Telegram Bot API (shared)
+  TELEGRAM_BOT_TOKEN: {{ .Values.telegram.botToken | default "" | quote }}
+  TELEGRAM_BOT_PUBLIC_URL: {{ .Values.telegram.publicUrl | default "" | quote }}
+  TELEGRAM_BOT_WEBHOOK_PORT: {{ .Values.telegram.webhookPort | default "6002" | toString | quote }}

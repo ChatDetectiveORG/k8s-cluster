@@ -1,7 +1,8 @@
 # ШАБЛОН ДЛЯ НОВОГО СЕРВИСА
 
-{{- if index .Values "service-name" "enabled" }}
-{{- $values := index .Values "service-name" }}
+{{- $svc := (index .Values "service-name") | default dict }}
+{{- if (get $svc "enabled" | default false) }}
+{{- $values := $svc }}
 {{- $context := dict "Values" $values "Chart" (dict "Name" "service-name") "Release" .Release }}
 
 ---

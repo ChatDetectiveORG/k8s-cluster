@@ -27,21 +27,38 @@ spec:
         - name: http
           containerPort: {{ .Values.service.targetPort }}
           protocol: TCP
-        {{- if .Values.env }}
         env:
-          {{- toYaml .Values.env | nindent 8 }}
-        {{- end }}
-        {{- if .Values.envFrom }}
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_ID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          {{- with .Values.env }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- $runtimeEnv := (.Values.runtimeEnv | default dict) }}
+        {{- if or .Values.envFrom (get $runtimeEnv "enabled" | default false) }}
         envFrom:
-          {{- toYaml .Values.envFrom | nindent 8 }}
+          {{- if (get $runtimeEnv "enabled" | default false) }}
+          - configMapRef:
+              name: {{ default (printf "%s-runtime-env" .Release.Name) (get $runtimeEnv "configMapName") }}
+          {{- end }}
+          {{- with .Values.envFrom }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
         {{- end }}
-        {{- if .Values.livenessProbe.enabled }}
+        {{- $liveness := (.Values.livenessProbe | default dict) }}
+        {{- if (get $liveness "enabled" | default false) }}
         livenessProbe:
-          {{- include "kind-microservice-base.livenessProbe" .Values.livenessProbe | nindent 10 }}
+          {{- include "kind-microservice-base.livenessProbe" $liveness | nindent 10 }}
         {{- end }}
-        {{- if .Values.readinessProbe.enabled }}
+        {{- $readiness := (.Values.readinessProbe | default dict) }}
+        {{- if (get $readiness "enabled" | default false) }}
         readinessProbe:
-          {{- include "kind-microservice-base.readinessProbe" .Values.readinessProbe | nindent 10 }}
+          {{- include "kind-microservice-base.readinessProbe" $readiness | nindent 10 }}
         {{- end }}
         {{- with .Values.resources }}
         resources:

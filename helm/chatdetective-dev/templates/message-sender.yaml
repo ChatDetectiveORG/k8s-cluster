@@ -1,0 +1,13 @@
+{{- $svc := (index .Values "message-sender") | default dict }}
+{{- if (get $svc "enabled" | default false) }}
+{{- $values := $svc }}
+{{- $context := dict "Values" $values "Chart" (dict "Name" "message-sender") "Release" .Release }}
+
+---
+{{ include "kind-microservice-base.deployment" $context }}
+
+---
+{{ include "kind-microservice-base.service" $context }}
+
+{{- end }}
+

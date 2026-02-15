@@ -1,28 +1,61 @@
-# Default values (overrides in values-local.yaml)
+# Default values for local development on kind.
+# Personal overrides should go to values-local.yaml (not committed).
 
+runtime:
+  # Used by all services via the runtime env ConfigMap.
+  numRoutingGoroutines: 4
+
+telegram:
+  # Shared by services that call Telegram Bot API.
+  # For local dev, override in values-local.yaml.
+  botToken: ""
+  # Used by api-gateway webhook mode (public https URL).
+  publicUrl: ""
+  webhookPort: "6002"
 
 postgresql:
-  enabled: true
+  # Disable Bitnami subchart for local dev (their tags may disappear / be arch-incompatible).
+  enabled: false
   auth:
     username: chatdetective
-    password: "123" 
+    password: "chatdetective"
     database: chatdetective
-    port: 5432
-    host: chatdetective-dev-postgresql
-  primary:
-    persistence:
-      enabled: false
+
+localPostgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  resources: {}
 
 rabbitmq:
   enabled: true
+  image:
+    # Bitnami removed some debian-tagged images from bitnami/rabbitmq; use legacy repo.
+    registry: docker.io
+    repository: bitnamilegacy/rabbitmq
+    tag: 4.1.3-debian-12-r0
   auth:
     username: chatdetective
-    password: "123"
-    port: 5672
-    host: chatdetective-dev-rabbitmq
+    password: "chatdetective"
   persistence:
     enabled: false
 
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+  auth:
+    enabled: false
+    # If auth.enabled=true, set a non-empty password and update REDIS_PASSWORD consumers.
+    password: ""
+  db: 0
+  resources: {}
+
+# --- Microservices ---
 
 api-gateway:
   enabled: true
@@ -34,41 +67,44 @@ api-gateway:
     pullPolicy: Always
   service:
     type: ClusterIP
-    port: 8080
-    targetPort: 8080
+    port: 6002
+    targetPort: 6002
   ingress:
-    enabled: true
+    enabled: false
     className: nginx
-    host: host
+    host: ""
     pathType: Prefix
     path: /
-  livenessProbe:
-    enabled: false
-  readinessProbe:
-    enabled: false
-  env:
-    - name: RABBITMQ_URL
-      value: "amqp://chatdetective:123@chatdetective-dev-rabbitmq:5672"
-    
-    - name: POSTGRES_USER
-      value: ""
-    - name: POSTGRES_PASSWORD
-      value: ""
-    - name: POSTGRES_DB
-      value: ""
-    - name: POSTGRES_PORT
-      value: ""
-    - name: POSTGRES_HOST
-      value: ""
-    
-    - name: TELEGRAM_BOT_TOKEN
-      value: ""
-    - name: TELEGRAM_BOT_PUBLIC_URL
-      value: ""
-    - name: TELEGRAM_BOT_WEBHOOK_PORT
-      value: ""
-    
-    - name: DOCKER_TARGET
-      value: "dev"
-    - name: PROJECT_NAME
-      value: ""
+  runtimeEnv:
+    enabled: true
+  env: []
+
+command-handler:
+  enabled: true
+  replicaCount: 1
+  image:
+    registry: localhost:5001
+    repository: chatdetective/command-handler
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  runtimeEnv:
+    enabled: true
+
+message-sender:
+  enabled: true
+  replicaCount: 1
+  image:
+    registry: localhost:5001
+    repository: chatdetective/message-sender
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  runtimeEnv:
+    enabled: true

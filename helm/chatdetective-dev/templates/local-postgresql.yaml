@@ -1,0 +1,55 @@
+{{- if .Values.localPostgresql.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-postgresql" .Release.Name }}
+  labels:
+    app.kubernetes.io/name: {{ printf "%s-postgresql" .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432
+  selector:
+    app.kubernetes.io/name: {{ printf "%s-postgresql" .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-postgresql" .Release.Name }}
+  labels:
+    app.kubernetes.io/name: {{ printf "%s-postgresql" .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ printf "%s-postgresql" .Release.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ printf "%s-postgresql" .Release.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: postgresql
+          image: {{ printf "%s:%s" (.Values.localPostgresql.image.repository | default "postgres") (.Values.localPostgresql.image.tag | default "16-alpine") }}
+          imagePullPolicy: {{ .Values.localPostgresql.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 5432
+              name: postgresql
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgresql.auth.password | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.auth.database | quote }}
+          resources:
+            {{- toYaml (.Values.localPostgresql.resources | default dict) | nindent 12 }}
+{{- end }}
