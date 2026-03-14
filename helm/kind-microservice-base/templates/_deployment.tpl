@@ -14,6 +14,20 @@ spec:
     metadata:
       labels:
         {{- include "kind-microservice-base.selectorLabels" . | nindent 8 }}
+      {{- $metrics := (.Values.metrics | default dict) }}
+      {{- if or .Values.podAnnotations (get $metrics "enabled" | default false) }}
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if (get $metrics "enabled" | default false) }}
+        {{- if (get $metrics "prometheusScrape" | default true) }}
+        prometheus.io/scrape: "true"
+        prometheus.io/path: {{ (get $metrics "path" | default "/metrics") | quote }}
+        prometheus.io/port: {{ (get $metrics "port" | default 9090) | toString | quote }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
     spec:
       {{- with .Values.image.pullSecrets }}
       imagePullSecrets:
@@ -27,6 +41,11 @@ spec:
         - name: http
           containerPort: {{ .Values.service.targetPort }}
           protocol: TCP
+        {{- if (get $metrics "enabled" | default false) }}
+        - name: metrics
+          containerPort: {{ (get $metrics "port" | default 9090) }}
+          protocol: TCP
+        {{- end }}
         env:
           - name: POD_NAME
             valueFrom:
@@ -36,6 +55,10 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          {{- if (get $metrics "enabled" | default false) }}
+          - name: METRICS_ADDR
+            value: {{ (get $metrics "addr" | default (printf ":%d" ((get $metrics "port" | default 9090) | int))) | quote }}
+          {{- end }}
           {{- with .Values.env }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

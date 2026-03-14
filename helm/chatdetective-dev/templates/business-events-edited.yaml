@@ -1,6 +1,6 @@
-{{- $svc := (index .Values "command-handler") | default dict }}
+{{- $svc := (index .Values "business-events-edited") | default dict }}
 {{- if (get $svc "enabled" | default false) }}
-{{- $context := dict "Values" $svc "Chart" (dict "Name" "command-handler") "Release" .Release }}
+{{- $context := dict "Values" $svc "Chart" (dict "Name" "business-events-edited") "Release" .Release }}
 
 ---
 {{ include "kind-microservice-base.deployment" $context }}
@@ -12,4 +12,3 @@
 {{ include "kind-microservice-base.hpa" $context }}
 
 {{- end }}
-

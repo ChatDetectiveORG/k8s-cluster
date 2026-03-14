@@ -25,3 +25,14 @@ dependencies:
     version: "16.0.14"
     repository: "oci://registry-1.docker.io/bitnamicharts"
     condition: rabbitmq.enabled
+
+  # Monitoring (optional)
+  - name: prometheus
+    version: "28.9.1"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: prometheus.enabled
+
+  - name: prometheus-adapter
+    version: "5.2.1"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: prometheus-adapter.enabled

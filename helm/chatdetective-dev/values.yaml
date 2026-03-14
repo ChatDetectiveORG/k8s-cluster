@@ -55,6 +55,68 @@ redis:
   db: 0
   resources: {}
 
+# --- Monitoring (optional) ---
+prometheus:
+  enabled: true
+  alertmanager:
+    enabled: false
+  kube-state-metrics:
+    enabled: false
+  prometheus-node-exporter:
+    enabled: false
+  pushgateway:
+    enabled: false
+  server:
+    # Kind/local defaults: keep it lightweight and stateless.
+    persistentVolume:
+      enabled: false
+    retention: "1d"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+prometheus-adapter:
+  enabled: true
+  prometheus:
+    # This value is templated by the chart.
+    url: http://{{ .Release.Name }}-prometheus-server
+    port: 80
+  rules:
+    default: false
+    external:
+      - seriesQuery: 'chatdetective_queue_updates_in_queue{namespace!="",pod!=""}'
+        resources:
+          overrides:
+            namespace:
+              resource: namespace
+        name:
+          matches: "^chatdetective_queue_updates_in_queue$"
+          as: "chatdetective_queue_updates_backlog"
+        # Filter to commands.* queues only — business-events services export the same metric name for their own queues.
+        metricsQuery: 'sum(max by (namespace, queue) (<<.Series>>{<<.LabelMatchers>>,queue=~"commands\\..*"})) by (namespace)'
+      - seriesQuery: 'chatdetective_queue_updates_in_queue{namespace!="",pod!=""}'
+        resources:
+          overrides:
+            namespace:
+              resource: namespace
+        name:
+          matches: "^chatdetective_queue_updates_in_queue$"
+          as: "chatdetective_business_events_new_backlog"
+        metricsQuery: 'sum(max by (namespace, queue) (<<.Series>>{<<.LabelMatchers>>,queue=~"business_events_new\\..*"})) by (namespace)'
+      - seriesQuery: 'chatdetective_queue_updates_in_queue{namespace!="",pod!=""}'
+        resources:
+          overrides:
+            namespace:
+              resource: namespace
+        name:
+          matches: "^chatdetective_queue_updates_in_queue$"
+          as: "chatdetective_business_events_edited_backlog"
+        metricsQuery: 'sum(max by (namespace, queue) (<<.Series>>{<<.LabelMatchers>>,queue=~"business_events_edited\\..*"})) by (namespace)'
+
 # --- Microservices ---
 
 api-gateway:
@@ -93,6 +155,26 @@ command-handler:
     targetPort: 8080
   runtimeEnv:
     enabled: true
+  metrics:
+    enabled: true
+    port: 9090
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    external:
+      enabled: true
+      metricName: chatdetective_queue_updates_backlog
+      # Scale up when total backlog grows beyond this threshold.
+      targetValue: "200"
 
 message-sender:
   enabled: true
@@ -108,3 +190,69 @@ message-sender:
     targetPort: 8080
   runtimeEnv:
     enabled: true
+
+business-events-new:
+  enabled: true
+  replicaCount: 1
+  image:
+    registry: localhost:5001
+    repository: chatdetective/business-events-new-handler
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  runtimeEnv:
+    enabled: true
+  metrics:
+    enabled: true
+    port: 9090
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    external:
+      enabled: true
+      metricName: chatdetective_business_events_new_backlog
+      targetValue: "200"
+
+business-events-edited:
+  enabled: true
+  replicaCount: 1
+  image:
+    registry: localhost:5001
+    repository: chatdetective/business-events-edited-handler
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  runtimeEnv:
+    enabled: true
+  metrics:
+    enabled: true
+    port: 9090
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    external:
+      enabled: true
+      metricName: chatdetective_business_events_edited_backlog
+      targetValue: "200"

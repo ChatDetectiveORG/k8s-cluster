@@ -21,6 +21,9 @@ ingress:
   path: /
   pathType: Prefix
 
+hpa:
+  enabled: false
+
 livenessProbe:
   enabled: false
   httpGet:
@@ -47,4 +50,11 @@ envFrom: []
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+# Optional Prometheus metrics endpoint (per-service).
+metrics:
+  enabled: false
+  port: 9090
+  path: /metrics
+  prometheusScrape: true
 

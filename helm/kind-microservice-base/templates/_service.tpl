@@ -12,6 +12,13 @@ spec:
       targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
       name: http
+    {{- $metrics := (.Values.metrics | default dict) }}
+    {{- if (get $metrics "enabled" | default false) }}
+    - port: {{ (get $metrics "servicePort" | default (get $metrics "port" | default 9090)) }}
+      targetPort: {{ (get $metrics "port" | default 9090) }}
+      protocol: TCP
+      name: metrics
+    {{- end }}
   selector:
     {{- include "kind-microservice-base.selectorLabels" . | nindent 4 }}
 {{- end }}
