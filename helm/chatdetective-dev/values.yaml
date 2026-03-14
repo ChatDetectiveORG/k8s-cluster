@@ -88,34 +88,33 @@ prometheus-adapter:
   rules:
     default: false
     external:
-      - seriesQuery: 'chatdetective_queue_updates_in_queue{namespace!="",pod!=""}'
+      - seriesQuery: 'chatdetective_commands_h_queue_updates_in_queue{namespace!="",pod!=""}'
         resources:
           overrides:
             namespace:
               resource: namespace
         name:
-          matches: "^chatdetective_queue_updates_in_queue$"
+          matches: "^chatdetective_commands_h_queue_updates_in_queue$"
           as: "chatdetective_queue_updates_backlog"
-        # Filter to commands.* queues only — business-events services export the same metric name for their own queues.
-        metricsQuery: 'sum(max by (namespace, queue) (<<.Series>>{<<.LabelMatchers>>,queue=~"commands\\..*"})) by (namespace)'
-      - seriesQuery: 'chatdetective_queue_updates_in_queue{namespace!="",pod!=""}'
+        metricsQuery: 'sum(max by (namespace, queue) (<<.Series>>{<<.LabelMatchers>>})) by (namespace)'
+      - seriesQuery: 'chatdetective_bus_enents_new_queue_updates_in_queue{namespace!="",pod!=""}'
         resources:
           overrides:
             namespace:
               resource: namespace
         name:
-          matches: "^chatdetective_queue_updates_in_queue$"
+          matches: "^chatdetective_bus_enents_new_queue_updates_in_queue$"
           as: "chatdetective_business_events_new_backlog"
-        metricsQuery: 'sum(max by (namespace, queue) (<<.Series>>{<<.LabelMatchers>>,queue=~"business_events_new\\..*"})) by (namespace)'
-      - seriesQuery: 'chatdetective_queue_updates_in_queue{namespace!="",pod!=""}'
+        metricsQuery: 'sum(max by (namespace, queue) (<<.Series>>{<<.LabelMatchers>>})) by (namespace)'
+      - seriesQuery: 'chatdetective_bus_enents_edited_queue_updates_in_queue{namespace!="",pod!=""}'
         resources:
           overrides:
             namespace:
               resource: namespace
         name:
-          matches: "^chatdetective_queue_updates_in_queue$"
+          matches: "^chatdetective_bus_enents_edited_queue_updates_in_queue$"
           as: "chatdetective_business_events_edited_backlog"
-        metricsQuery: 'sum(max by (namespace, queue) (<<.Series>>{<<.LabelMatchers>>,queue=~"business_events_edited\\..*"})) by (namespace)'
+        metricsQuery: 'sum(max by (namespace, queue) (<<.Series>>{<<.LabelMatchers>>})) by (namespace)'
 
 # --- Microservices ---
 
