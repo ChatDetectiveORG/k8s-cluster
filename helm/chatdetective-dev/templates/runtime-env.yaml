@@ -29,6 +29,7 @@ data:
 
   # Optional runtime tuning
   NUM_ROUTING_GOROUTINES: {{ .Values.runtime.numRoutingGoroutines | default 4 | toString | quote }}
+  MASTER_KEY: {{ .Values.runtime.masterKey | default "foobarbaz" | quote }}
 
   # Telegram Bot API (shared)
   TELEGRAM_BOT_TOKEN: {{ .Values.telegram.botToken | default "" | quote }}

@@ -4,6 +4,7 @@
 runtime:
   # Used by all services via the runtime env ConfigMap.
   numRoutingGoroutines: 4
+  masterKey: "VilAUekrAEUQFZZjHvRMSDAyMuskLPZM"
 
 telegram:
   # Shared by services that call Telegram Bot API.
