@@ -191,6 +191,28 @@ message-sender:
   runtimeEnv:
     enabled: true
 
+payment-service:
+  enabled: true
+  replicaCount: 1
+  image:
+    registry: localhost:5001
+    repository: chatdetective/payment-service
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  runtimeEnv:
+    enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
 business-events-new:
   enabled: true
   replicaCount: 1

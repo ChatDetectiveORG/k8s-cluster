@@ -52,4 +52,11 @@ spec:
               value: {{ .Values.postgresql.auth.database | quote }}
           resources:
             {{- toYaml (.Values.localPostgresql.resources | default dict) | nindent 12 }}
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /admin/chatdetective/postgresql
+      volumes:
+        - name: postgres-data
+          emptyDir: {}
+       
 {{- end }}
