@@ -191,6 +191,30 @@ message-sender:
   runtimeEnv:
     enabled: true
 
+# Drains the shared Telegram Bot API token bucket in Redis (shared/ratelimit). Must run exactly
+# one replica per cluster, or callers will stall waiting for tokens.
+event-loop:
+  enabled: true
+  replicaCount: 1
+  image:
+    registry: localhost:5001
+    repository: chatdetective/event-loop
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  runtimeEnv:
+    enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
 payment-service:
   enabled: true
   replicaCount: 1
@@ -212,6 +236,28 @@ payment-service:
     limits:
       cpu: 500m
       memory: 512Mi
+
+chat-export-service:
+  enabled: true
+  replicaCount: 1
+  image:
+    registry: localhost:5001
+    repository: chatdetective/chat-export-service
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  runtimeEnv:
+    enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
 
 business-events-new:
   enabled: true
