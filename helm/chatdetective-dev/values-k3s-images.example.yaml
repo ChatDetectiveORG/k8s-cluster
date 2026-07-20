@@ -1,0 +1,50 @@
+# Example image-pinning overlay for the k3s production deployment.
+#
+# Copy to values-k3s-images.yaml (on the VPS or in your deploy checkout) and pin every
+# service to an immutable tag or digest. Each service is built and pushed independently
+# by its own GitHub Actions workflow, so tags are per-service (commit SHA of the build).
+#
+# Find the current tags/digests at:
+#   https://github.com/orgs/ChatDetectiveORG/packages
+#
+# Do NOT deploy production with tag: latest — rollbacks and reproducibility break.
+
+api-gateway:
+  image:
+    tag: "0000000000000000000000000000000000000000" # CHANGE_ME: full commit SHA of the service build
+    pullPolicy: IfNotPresent
+
+command-handler:
+  image:
+    tag: "0000000000000000000000000000000000000000" # CHANGE_ME: full commit SHA of the service build
+    pullPolicy: IfNotPresent
+
+message-sender:
+  image:
+    tag: "0000000000000000000000000000000000000000" # CHANGE_ME: full commit SHA of the service build
+    pullPolicy: IfNotPresent
+
+event-loop:
+  image:
+    tag: "0000000000000000000000000000000000000000" # CHANGE_ME: full commit SHA of the service build
+    pullPolicy: IfNotPresent
+
+payment-service:
+  image:
+    tag: "0000000000000000000000000000000000000000" # CHANGE_ME: full commit SHA of the service build
+    pullPolicy: IfNotPresent
+
+chat-export-service:
+  image:
+    tag: "0000000000000000000000000000000000000000" # CHANGE_ME: full commit SHA of the service build
+    pullPolicy: IfNotPresent
+
+business-events-new:
+  image:
+    tag: "0000000000000000000000000000000000000000" # CHANGE_ME: full commit SHA of the service build
+    pullPolicy: IfNotPresent
+
+business-events-edited:
+  image:
+    tag: "0000000000000000000000000000000000000000" # CHANGE_ME: full commit SHA of the service build
+    pullPolicy: IfNotPresent

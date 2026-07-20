@@ -1,0 +1,51 @@
+{{- /*
+Production guard checks. Enabled via productionGuards.enabled=true (set in
+values-k3s-mini.yaml). Renders no resources — it only fails the render early when the
+release is about to go out with placeholder or unsafe values.
+*/ -}}
+{{- if (.Values.productionGuards | default dict).enabled }}
+
+{{- /* --- Domain / webhook URL must not be placeholders --- */}}
+{{- $gw := index .Values "api-gateway" }}
+{{- $host := ($gw.ingress).host | default "" }}
+{{- if or (eq $host "") (contains "example.com" $host) (contains "CHANGE_ME" $host) }}
+{{- fail "productionGuards: api-gateway.ingress.host is empty or a placeholder — set the real domain in the secrets overlay" }}
+{{- end }}
+{{- $publicUrl := .Values.telegram.publicUrl | default "" }}
+{{- if or (eq $publicUrl "") (contains "example.com" $publicUrl) (contains "CHANGE_ME" $publicUrl) }}
+{{- fail "productionGuards: telegram.publicUrl is empty or a placeholder — set the real webhook URL in the secrets overlay" }}
+{{- end }}
+
+{{- /* --- Webhook secret and bot identity --- */}}
+{{- if not (.Values.telegram.webhookSecret | default "") }}
+{{- fail "productionGuards: telegram.webhookSecret is required (openssl rand -hex 32)" }}
+{{- end }}
+{{- if not (.Values.telegram.botUsername | default "") }}
+{{- fail "productionGuards: telegram.botUsername is required" }}
+{{- end }}
+
+{{- /* --- Legal documents must be published for a public launch --- */}}
+{{- $legal := .Values.legal | default dict }}
+{{- range $key := list "agreementUrl" "privacyUrl" "consentUrl" "docsVersion" }}
+{{- $value := get $legal $key | default "" }}
+{{- if or (eq $value "") (contains "example.com" $value) (contains "CHANGE_ME" $value) }}
+{{- fail (printf "productionGuards: legal.%s is empty or a placeholder — publish the legal documents and set their real URLs/version" $key) }}
+{{- end }}
+{{- end }}
+
+{{- /* --- event-loop must be a singleton (shared rate-limit dispatcher) --- */}}
+{{- $eventLoop := index .Values "event-loop" }}
+{{- if ne (int $eventLoop.replicaCount) 1 }}
+{{- fail "productionGuards: event-loop.replicaCount must be exactly 1" }}
+{{- end }}
+
+{{- /* --- No :latest images in production --- */}}
+{{- range $service := list "api-gateway" "command-handler" "message-sender" "event-loop" "payment-service" "chat-export-service" "business-events-new" "business-events-edited" }}
+{{- $svc := index $.Values $service }}
+{{- $tag := ($svc.image).tag | toString }}
+{{- if or (eq $tag "latest") (eq $tag "") (contains "0000000000000000000000000000000000000000" $tag) }}
+{{- fail (printf "productionGuards: %s.image.tag must be pinned to an immutable tag (commit SHA), got %q — see values-k3s-images.example.yaml" $service $tag) }}
+{{- end }}
+{{- end }}
+
+{{- end }}

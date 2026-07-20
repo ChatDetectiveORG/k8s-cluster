@@ -6,10 +6,18 @@ metadata:
   name: {{ include "kind-microservice-base.fullname" . }}
   labels:
     {{- include "kind-microservice-base.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   rules:
-    - host: {{ .Values.ingress.host }}
+    - host: {{ .Values.ingress.host | quote }}
       http:
         paths:
           - path: {{ .Values.ingress.path }}

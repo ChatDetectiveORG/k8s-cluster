@@ -1,0 +1,21 @@
+{{- $svc := (index .Values "chat-export-service") | default dict }}
+{{- $persistence := (get $svc "persistence" | default dict) }}
+{{- if and (get $svc "enabled" | default false) (get $persistence "enabled" | default false) (not (get $persistence "existingClaim")) }}
+{{- $context := dict "Values" $svc "Chart" (dict "Name" "chat-export-service") "Release" .Release }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "kind-microservice-base.fullname" $context }}
+  labels:
+    app.kubernetes.io/name: {{ include "kind-microservice-base.fullname" $context }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  accessModes:
+    {{- toYaml (get $persistence "accessModes" | default (list "ReadWriteOnce")) | nindent 4 }}
+  {{- if (get $persistence "storageClassName") }}
+  storageClassName: {{ get $persistence "storageClassName" | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ (get $persistence "size" | default "10Gi") | quote }}
+{{- end }}

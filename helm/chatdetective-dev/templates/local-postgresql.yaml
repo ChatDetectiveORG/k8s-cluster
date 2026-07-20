@@ -1,4 +1,5 @@
 {{- if .Values.localPostgresql.enabled }}
+{{- $persistence := (.Values.localPostgresql.persistence | default dict) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -47,16 +48,44 @@ spec:
             - name: POSTGRES_USER
               value: {{ .Values.postgresql.auth.username | quote }}
             - name: POSTGRES_PASSWORD
-              value: {{ .Values.postgresql.auth.password | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-runtime-secret" .Release.Name }}
+                  key: POSTGRES_PASSWORD
             - name: POSTGRES_DB
               value: {{ .Values.postgresql.auth.database | quote }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           resources:
             {{- toYaml (.Values.localPostgresql.resources | default dict) | nindent 12 }}
           volumeMounts:
             - name: postgres-data
-              mountPath: /admin/chatdetective/postgresql
+              mountPath: {{ (get $persistence "mountPath" | default "/var/lib/postgresql/data") | quote }}
       volumes:
         - name: postgres-data
+          {{- if (get $persistence "enabled" | default false) }}
+          persistentVolumeClaim:
+            claimName: {{ (get $persistence "existingClaim" | default (printf "%s-postgresql-data" .Release.Name)) | quote }}
+          {{- else }}
           emptyDir: {}
+          {{- end }}
        
 {{- end }}

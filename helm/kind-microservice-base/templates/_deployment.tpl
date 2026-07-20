@@ -7,6 +7,10 @@ metadata:
     {{- include "kind-microservice-base.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "kind-microservice-base.selectorLabels" . | nindent 6 }}
@@ -29,14 +33,25 @@ spec:
         {{- end }}
       {{- end }}
     spec:
+      {{- with .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
+      {{- end }}
       {{- with .Values.image.pullSecrets }}
       imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
       - name: {{ .Chart.Name }}
         image: {{ include "kind-microservice-base.image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         ports:
         - name: http
           containerPort: {{ .Values.service.targetPort }}
@@ -68,6 +83,11 @@ spec:
           {{- if (get $runtimeEnv "enabled" | default false) }}
           - configMapRef:
               name: {{ default (printf "%s-runtime-env" .Release.Name) (get $runtimeEnv "configMapName") }}
+          {{- $runtimeSecret := (get $runtimeEnv "secret" | default dict) }}
+          {{- if (get $runtimeSecret "enabled" | default true) }}
+          - secretRef:
+              name: {{ default (printf "%s-runtime-secret" .Release.Name) (get $runtimeSecret "name") }}
+          {{- end }}
           {{- end }}
           {{- with .Values.envFrom }}
           {{- toYaml . | nindent 10 }}
@@ -87,6 +107,29 @@ spec:
         resources:
           {{- toYaml . | nindent 10 }}
         {{- end }}
+        {{- $persistence := (.Values.persistence | default dict) }}
+        {{- if or (get $persistence "enabled" | default false) .Values.extraVolumeMounts }}
+        volumeMounts:
+          {{- if (get $persistence "enabled" | default false) }}
+          - name: {{ (get $persistence "volumeName" | default "data") | quote }}
+            mountPath: {{ required "persistence.mountPath is required when persistence.enabled=true" (get $persistence "mountPath") | quote }}
+          {{- end }}
+          {{- with .Values.extraVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- end }}
+      {{- $podPersistence := (.Values.persistence | default dict) }}
+      {{- if or (get $podPersistence "enabled" | default false) .Values.extraVolumes }}
+      volumes:
+        {{- if (get $podPersistence "enabled" | default false) }}
+        - name: {{ (get $podPersistence "volumeName" | default "data") | quote }}
+          persistentVolumeClaim:
+            claimName: {{ (get $podPersistence "existingClaim" | default (include "kind-microservice-base.fullname" .)) | quote }}
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

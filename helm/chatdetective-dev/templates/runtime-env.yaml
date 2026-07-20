@@ -13,25 +13,29 @@ data:
   POSTGRES_HOST: {{ printf "%s-postgresql" .Release.Name | quote }}
   POSTGRES_PORT: "5432"
   POSTGRES_USER: {{ .Values.postgresql.auth.username | quote }}
-  POSTGRES_PASSWORD: {{ .Values.postgresql.auth.password | quote }}
   POSTGRES_DB: {{ .Values.postgresql.auth.database | quote }}
 
-  # RabbitMQ (bitnami/rabbitmq subchart)
+  # RabbitMQ (bitnami/rabbitmq subchart).
+  # RABBITMQ_PASSWORD and RABBITMQ_URL are sensitive and live in the runtime Secret.
   RABBITMQ_HOST: {{ printf "%s-rabbitmq" .Release.Name | quote }}
   RABBITMQ_PORT: "5672"
-  RABBITMQ_URL: {{ printf "amqp://%s:%s@%s-rabbitmq:5672" .Values.rabbitmq.auth.username .Values.rabbitmq.auth.password .Release.Name | quote }}
+  RABBITMQ_USERNAME: {{ .Values.rabbitmq.auth.username | quote }}
 
   # Redis (internal template)
   REDIS_HOST: {{ printf "%s-redis" .Release.Name | quote }}
   REDIS_PORT: "6379"
-  REDIS_PASSWORD: {{ .Values.redis.auth.password | default "" | quote }}
   REDIS_DB: {{ .Values.redis.db | default 0 | toString | quote }}
 
   # Optional runtime tuning
   NUM_ROUTING_GOROUTINES: {{ .Values.runtime.numRoutingGoroutines | default 4 | toString | quote }}
-  MASTER_KEY: {{ .Values.runtime.masterKey | default "foobarbaz" | quote }}
 
-  # Telegram Bot API (shared)
-  TELEGRAM_BOT_TOKEN: {{ .Values.telegram.botToken | default "" | quote }}
+  # Telegram Bot API (shared, non-secret URL/port only)
   TELEGRAM_BOT_PUBLIC_URL: {{ .Values.telegram.publicUrl | default "" | quote }}
   TELEGRAM_BOT_WEBHOOK_PORT: {{ .Values.telegram.webhookPort | default "6002" | toString | quote }}
+  BOT_USERNAME: {{ .Values.telegram.botUsername | default "" | quote }}
+
+  # Legal consent gate (see shared/legal). All four must be set in production.
+  LEGAL_AGREEMENT_URL: {{ .Values.legal.agreementUrl | default "" | quote }}
+  LEGAL_PRIVACY_URL: {{ .Values.legal.privacyUrl | default "" | quote }}
+  LEGAL_CONSENT_URL: {{ .Values.legal.consentUrl | default "" | quote }}
+  LEGAL_DOCS_VERSION: {{ .Values.legal.docsVersion | default "" | quote }}

@@ -15,3 +15,7 @@ Thumbs.db
 
 **/values-local.yaml
 **/values-*.local.yaml
+
+# Filled-in production overlays live only on the VPS, never in git.
+**/values-k3s-secrets.yaml
+**/values-k3s-images.yaml

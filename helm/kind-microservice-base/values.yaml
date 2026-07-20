@@ -17,9 +17,11 @@ service:
 ingress:
   enabled: false
   className: nginx
+  annotations: {}
   host: localhost
   path: /
   pathType: Prefix
+  tls: []
 
 hpa:
   enabled: false
@@ -47,9 +49,19 @@ readinessProbe:
 resources: {}
 env: []
 envFrom: []
+podSecurityContext: {}
+securityContext: {}
+extraVolumes: []
+extraVolumeMounts: []
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+persistence:
+  enabled: false
+  volumeName: data
+  mountPath: ""
+  existingClaim: ""
 
 # Optional Prometheus metrics endpoint (per-service).
 metrics:

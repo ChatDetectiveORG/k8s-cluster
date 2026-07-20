@@ -1,15 +1,39 @@
 # Default values for local development on kind.
 # Personal overrides should go to values-local.yaml (not committed).
 
+global:
+  security:
+    # The chart currently uses bitnamilegacy/rabbitmq because some original Bitnami tags vanished.
+    allowInsecureImages: true
+
 runtime:
   # Used by all services via the runtime env ConfigMap.
   numRoutingGoroutines: 4
-  masterKey: "VilAUekrAEUQFZZjHvRMSDAyMuskLPZM"
+  # AES master key (16/24/32 bytes). NEVER commit a real value: set it in
+  # values-local.yaml (dev) or the on-VPS secrets overlay (prod).
+  # See values-local.example.yaml.
+  masterKey: ""
+
+runtimeSecret:
+  # Local/dev creates a Secret from values for compatibility. Prod must provide these values
+  # from an encrypted or CI-generated values file and should keep required=true.
+  create: true
+  required: false
+
+# Legal consent gate. When any value is empty the bot skips the consent gate
+# (acceptable for dev only). Production overlays must set all four.
+legal:
+  agreementUrl: ""
+  privacyUrl: ""
+  consentUrl: ""
+  docsVersion: ""
 
 telegram:
   # Shared by services that call Telegram Bot API.
   # For local dev, override in values-local.yaml.
   botToken: ""
+  # Public username of the bot, e.g. "@MyBot" (used in user-facing texts and referral links).
+  botUsername: ""
   # Used by api-gateway webhook mode (public https URL).
   publicUrl: ""
   webhookPort: "6002"
@@ -19,7 +43,8 @@ postgresql:
   enabled: false
   auth:
     username: chatdetective
-    password: "chatdetective"
+    # Set in values-local.yaml (dev) or the secrets overlay (prod).
+    password: ""
     database: chatdetective
 
 localPostgresql:
@@ -29,6 +54,14 @@ localPostgresql:
     tag: "16-alpine"
     pullPolicy: IfNotPresent
   resources: {}
+  persistence:
+    enabled: false
+    storageClassName: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+    mountPath: /var/lib/postgresql/data
+    existingClaim: ""
 
 rabbitmq:
   enabled: true
@@ -39,7 +72,8 @@ rabbitmq:
     tag: 4.1.3-debian-12-r0
   auth:
     username: chatdetective
-    password: "chatdetective"
+    # Set in values-local.yaml (dev) or the secrets overlay (prod).
+    password: ""
   persistence:
     enabled: false
 
@@ -258,6 +292,14 @@ chat-export-service:
     limits:
       cpu: 1000m
       memory: 1Gi
+  persistence:
+    enabled: false
+    storageClassName: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    mountPath: /var/exports
+    existingClaim: ""
 
 business-events-new:
   enabled: true

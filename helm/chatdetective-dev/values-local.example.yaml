@@ -1,0 +1,37 @@
+# Example secrets overlay for LOCAL DEVELOPMENT.
+#
+# Copy to values-local.yaml (gitignored) and fill in your own values:
+#   cp values-local.example.yaml values-local.yaml
+#
+# For production use values-k3s-secrets.example.yaml instead — the production
+# secrets overlay lives only on the VPS with mode 600.
+
+runtime:
+  # Exactly 16, 24 or 32 bytes (AES-128/192/256). Generate with:
+  #   openssl rand -base64 24 | head -c 32
+  masterKey: "CHANGE_ME_32_BYTE_LOCAL_DEV_KEY_"
+
+postgresql:
+  auth:
+    password: "local-dev-postgres-password"
+
+rabbitmq:
+  auth:
+    password: "local-dev-rabbitmq-password"
+
+telegram:
+  # Token of your DEV bot (never the production one).
+  botToken: ""
+  botUsername: "@MyDevBot"
+  # Public URL is only needed when testing webhook mode locally (e.g. via a tunnel).
+  publicUrl: ""
+  # Random secret echoed back by Telegram in X-Telegram-Bot-Api-Secret-Token.
+  # Generate with: openssl rand -hex 32
+  webhookSecret: "local-dev-webhook-secret"
+
+# Optional: enable the legal consent gate locally.
+legal:
+  agreementUrl: ""
+  privacyUrl: ""
+  consentUrl: ""
+  docsVersion: ""
