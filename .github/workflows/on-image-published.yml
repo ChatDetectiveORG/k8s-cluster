@@ -1,0 +1,149 @@
+name: Production selective deploy
+
+on:
+  repository_dispatch:
+    types: [image-published]
+  workflow_dispatch:
+    inputs:
+      service:
+        description: Helm service key (required unless full_deploy)
+        required: false
+        type: string
+      sha:
+        description: Commit SHA image tag (required unless full_deploy)
+        required: false
+        type: string
+      full_deploy:
+        description: Run full deploy.sh instead of selective deploy
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve deploy parameters
+        id: params
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            service="${{ github.event.client_payload.service }}"
+            sha="${{ github.event.client_payload.sha }}"
+            source_repo="${{ github.event.client_payload.source_repo }}"
+            source_run="${{ github.event.client_payload.source_run_id }}"
+            full="false"
+          else
+            service="${{ inputs.service }}"
+            sha="${{ inputs.sha }}"
+            source_repo="manual"
+            source_run="${{ github.run_id }}"
+            full="${{ inputs.full_deploy }}"
+          fi
+
+          if [ "$full" = "true" ]; then
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+            echo "service=" >> "$GITHUB_OUTPUT"
+            echo "sha=" >> "$GITHUB_OUTPUT"
+          else
+            if [ -z "$service" ] || [ -z "$sha" ]; then
+              echo "service and sha are required unless full_deploy=true" >&2
+              exit 1
+            fi
+            echo "mode=selective" >> "$GITHUB_OUTPUT"
+            echo "service=$service" >> "$GITHUB_OUTPUT"
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "source_repo=$source_repo" >> "$GITHUB_OUTPUT"
+          echo "source_run=$source_run" >> "$GITHUB_OUTPUT"
+
+      - name: Telegram — deploy queued
+        env:
+          TELEGRAM_OPS_BOT_TOKEN: ${{ secrets.TELEGRAM_OPS_BOT_TOKEN }}
+          TELEGRAM_OPS_CHAT_ID: ${{ secrets.TELEGRAM_OPS_CHAT_ID }}
+          MODE: ${{ steps.params.outputs.mode }}
+          SERVICE: ${{ steps.params.outputs.service }}
+          SHA: ${{ steps.params.outputs.sha }}
+          SOURCE_REPO: ${{ steps.params.outputs.source_repo }}
+          SOURCE_RUN: ${{ steps.params.outputs.source_run }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ -z "$TELEGRAM_OPS_BOT_TOKEN" ] || [ -z "$TELEGRAM_OPS_CHAT_ID" ]; then
+            echo "Telegram secrets not set; skipping"
+            exit 0
+          fi
+          if [ "$MODE" = "full" ]; then
+            export MSG="🚀 ChatDetective: full deploy started (run ${RUN_ID})"
+          else
+            export MSG="🚀 ChatDetective: selective deploy ${SERVICE}:${SHA}
+          source: ${SOURCE_REPO} #${SOURCE_RUN}"
+          fi
+          python3 -c 'import json,os; print(json.dumps({"chat_id":os.environ["TELEGRAM_OPS_CHAT_ID"],"text":os.environ["MSG"],"disable_web_page_preview":True}))' \
+            | curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_OPS_BOT_TOKEN}/sendMessage" \
+              -H 'Content-Type: application/json' -d @- || true
+
+      - name: Deploy on VPS
+        id: ssh
+        env:
+          DEPLOY_MODE: ${{ steps.params.outputs.mode }}
+          DEPLOY_SERVICE: ${{ steps.params.outputs.service }}
+          DEPLOY_SHA: ${{ steps.params.outputs.sha }}
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          TELEGRAM_OPS_BOT_TOKEN: ${{ secrets.TELEGRAM_OPS_BOT_TOKEN }}
+          TELEGRAM_OPS_CHAT_ID: ${{ secrets.TELEGRAM_OPS_CHAT_ID }}
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_SSH_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 40m
+          script_stop: true
+          envs: DEPLOY_MODE,DEPLOY_SERVICE,DEPLOY_SHA,PROD_HOST,TELEGRAM_OPS_BOT_TOKEN,TELEGRAM_OPS_CHAT_ID
+          script: |
+            set -euo pipefail
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            cd /root/k8s-cluster
+            git pull --ff-only
+
+            notify() { ./scripts/notify-telegram.sh "$1" || true; }
+
+            notify "📦 git pull done on VPS; mode=${DEPLOY_MODE}"
+
+            if [ "$DEPLOY_MODE" = "full" ]; then
+              notify "⏳ running full ./scripts/deploy.sh"
+              HELM_TIMEOUT=30m ./scripts/deploy.sh
+              DEPLOYED_SERVICE=""
+            else
+              notify "⏳ patching ${DEPLOY_SERVICE} -> ${DEPLOY_SHA}"
+              ./scripts/patch-image-tag.sh "$DEPLOY_SERVICE" "$DEPLOY_SHA"
+              notify "⏳ helm upgrade + rollout ${DEPLOY_SERVICE}"
+              HELM_TIMEOUT=30m ./scripts/deploy-service.sh "$DEPLOY_SERVICE"
+              DEPLOYED_SERVICE="$DEPLOY_SERVICE"
+            fi
+
+            notify "🔍 smoke checks"
+            export DEPLOYED_SERVICE
+            ./scripts/smoke-prod.sh
+
+            notify "✅ deploy finished (${DEPLOY_MODE}${DEPLOYED_SERVICE:+ $DEPLOYED_SERVICE})"
+
+      - name: Telegram — failure
+        if: failure()
+        env:
+          TELEGRAM_OPS_BOT_TOKEN: ${{ secrets.TELEGRAM_OPS_BOT_TOKEN }}
+          TELEGRAM_OPS_CHAT_ID: ${{ secrets.TELEGRAM_OPS_CHAT_ID }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ -z "$TELEGRAM_OPS_BOT_TOKEN" ] || [ -z "$TELEGRAM_OPS_CHAT_ID" ]; then
+            exit 0
+          fi
+          MSG="❌ ChatDetective deploy FAILED (run ${RUN_ID})"
+          export MSG
+          python3 -c 'import json,os; print(json.dumps({"chat_id":os.environ["TELEGRAM_OPS_CHAT_ID"],"text":os.environ["MSG"],"disable_web_page_preview":True}))' \
+            | curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_OPS_BOT_TOKEN}/sendMessage" \
+              -H 'Content-Type: application/json' -d @- || true

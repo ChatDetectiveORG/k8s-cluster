@@ -27,7 +27,7 @@ data:
   REDIS_DB: {{ .Values.redis.db | default 0 | toString | quote }}
 
   # Optional runtime tuning
-  NUM_ROUTING_GOROUTINES: {{ .Values.runtime.numRoutingGoroutines | default 4 | toString | quote }}
+  NUM_ROUTING_GOROUTINES: {{ (.Values.runtime | default dict).numRoutingGoroutines | default 4 | toString | quote }}
 
   # Telegram Bot API (shared, non-secret URL/port only)
   TELEGRAM_BOT_PUBLIC_URL: {{ .Values.telegram.publicUrl | default "" | quote }}

@@ -2,7 +2,7 @@
 
 Инструкция рассчитана на чистый Ubuntu VPS (рекомендуемый минимум: 2 vCPU, 4 GiB RAM, 40+ GiB SSD), один namespace `chatdetective`, ingress-nginx, cert-manager с Let's Encrypt и образы из GHCR.
 
-**Модель деплоя:** все `kubectl`/`helm` команды выполняются только на самом VPS после SSH. Kubernetes API (порт 6443) в интернет не публикуется. GitHub Actions используется только для тестирования и публикации Docker-образов — деплой из CI не выполняется.
+**Модель деплоя:** все `kubectl`/`helm` команды выполняются на VPS. Kubernetes API (порт 6443) в интернет не публикуется. GitHub Actions публикует Docker-образы; **selective deploy** (один microservice за раз) описан в [DEPLOY-CI.md](./DEPLOY-CI.md). Полный перекат release — `./scripts/deploy.sh` на VPS или workflow_dispatch с `full_deploy=true`.
 
 Секретный values-файл существует в единственном экземпляре на VPS с mode `600` и никогда не попадает в git.
 
