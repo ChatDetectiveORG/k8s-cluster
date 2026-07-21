@@ -299,8 +299,11 @@ event-loop:
     runAsGroup: 10001
 
 payment-service:
+  enabled: true
   replicaCount: 1
   terminationGracePeriodSeconds: 60
+  runtimeEnv:
+    enabled: true
   extraVolumes:
     - name: tmp
       emptyDir: {}

@@ -20,6 +20,20 @@ runtimeSecret:
   create: true
   required: false
 
+# Versioned SQL migrations (golang-migrate). Files live in helm/chart/migrations/ and are
+# synced from shared/migrations via k8s-cluster/scripts/sync-db-migrations.sh.
+dbMigrate:
+  enabled: true
+  image:
+    repository: migrate/migrate
+    tag: v4.18.2
+    pullPolicy: IfNotPresent
+  waitImage:
+    repository: busybox
+    tag: "1.36"
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
+
 # Legal consent gate. When any value is empty the bot skips the consent gate
 # (acceptable for dev only). Production overlays must set all four.
 legal:

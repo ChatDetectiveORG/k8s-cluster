@@ -82,8 +82,13 @@ helm_render_guard() {
     -f "$SECRETS_FILE" >/dev/null
 }
 
+sync_db_migrations() {
+  "$_LIB_DIR/sync-db-migrations.sh"
+}
+
 helm_upgrade_release() {
   local atomic="${1:-false}"
+  sync_db_migrations
   echo "==> helm upgrade --install $RELEASE (atomic=$atomic)"
   if [ "$atomic" = "true" ]; then
     helm upgrade --install "$RELEASE" "$CHART_DIR" \
