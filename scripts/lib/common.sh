@@ -5,7 +5,8 @@ set -euo pipefail
 NAMESPACE="${NAMESPACE:-chatdetective}"
 RELEASE="${RELEASE:-chatdetective}"
 _LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-_REPO_ROOT="$(cd "$_LIB_DIR/../.." && pwd)"
+_SCRIPTS_DIR="$(cd "$_LIB_DIR/.." && pwd)"
+_REPO_ROOT="$(cd "$_SCRIPTS_DIR/.." && pwd)"
 CHART_DIR="${CHART_DIR:-${_REPO_ROOT}/helm/chatdetective-dev}"
 SECRETS_FILE="${SECRETS_FILE:-/root/chatdetective/values-k3s-secrets.yaml}"
 IMAGES_FILE="${IMAGES_FILE:-/root/chatdetective/values-k3s-images.yaml}"
@@ -83,7 +84,7 @@ helm_render_guard() {
 }
 
 sync_db_migrations() {
-  "$_LIB_DIR/sync-db-migrations.sh"
+  "$_SCRIPTS_DIR/sync-db-migrations.sh"
 }
 
 helm_upgrade_release() {
