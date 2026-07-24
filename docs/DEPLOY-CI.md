@@ -36,10 +36,11 @@ sequenceDiagram
 | chat-export-service | chat-export-service | chat-export-service | chatdetective-chat-export-service |
 | business-events-new-handler | business-events-new-handler | business-events-new | chatdetective-business-events-new |
 | business-events-edited-handler | business-events-edited-handler | business-events-edited | chatdetective-business-events-edited |
+| mailing-service | mailing-service | mailing-service | chatdetective-mailing-service |
 
 ## GitHub Secrets
 
-### В каждом из 8 service repos
+### В каждом из 9 service repos
 
 Settings → Secrets and variables → Actions → **New repository secret**
 
@@ -51,7 +52,7 @@ Settings → Secrets and variables → Actions → **New repository secret**
 
 **Fine-grained PAT:** Repository access → только `k8s-cluster`; Permissions → **Contents: Read**, **Metadata: Read**, **Actions: Read and write** (или Admin, если Actions write недоступен отдельно).
 
-Один и тот же токен можно положить во все 8 репозиториев.
+Один и тот же токен можно положить во все 9 репозиториев.
 
 Уже существующие секреты (не трогаем):
 

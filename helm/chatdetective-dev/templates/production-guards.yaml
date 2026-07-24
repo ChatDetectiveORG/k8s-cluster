@@ -40,7 +40,7 @@ release is about to go out with placeholder or unsafe values.
 {{- end }}
 
 {{- /* --- No :latest images in production --- */}}
-{{- range $service := list "api-gateway" "command-handler" "message-sender" "event-loop" "payment-service" "chat-export-service" "business-events-new" "business-events-edited" }}
+{{- range $service := list "api-gateway" "command-handler" "mailing-service" "message-sender" "event-loop" "payment-service" "chat-export-service" "business-events-new" "business-events-edited" }}
 {{- $svc := index $.Values $service }}
 {{- $tag := ($svc.image).tag | toString }}
 {{- if or (eq $tag "latest") (eq $tag "") (contains "0000000000000000000000000000000000000000" $tag) }}

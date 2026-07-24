@@ -13,10 +13,11 @@ IMAGES_FILE="${IMAGES_FILE:-/root/chatdetective/values-k3s-images.yaml}"
 HELM_TIMEOUT="${HELM_TIMEOUT:-10m}"
 KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 
-# Helm values keys for the eight application microservices.
+# Helm values keys for the nine application microservices.
 VALID_HELM_SERVICES=(
   api-gateway
   command-handler
+  mailing-service
   message-sender
   event-loop
   payment-service

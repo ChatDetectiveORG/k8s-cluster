@@ -26,7 +26,7 @@ helm_upgrade_release true
 
 echo "==> waiting for rollouts"
 for deploy in \
-  api-gateway command-handler message-sender event-loop payment-service \
+  api-gateway command-handler mailing-service message-sender event-loop payment-service \
   chat-export-service business-events-new business-events-edited postgresql redis
 do
   rollout_deployment "$deploy" 180s

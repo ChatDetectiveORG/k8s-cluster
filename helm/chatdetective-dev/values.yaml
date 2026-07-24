@@ -224,6 +224,40 @@ command-handler:
       # Scale up when total backlog grows beyond this threshold.
       targetValue: "200"
 
+mailing-service:
+  enabled: true
+  replicaCount: 1
+  image:
+    registry: localhost:5001
+    repository: chatdetective/mailing-service
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  runtimeEnv:
+    enabled: true
+  metrics:
+    enabled: true
+    port: 9090
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    external:
+      enabled: true
+      metricName: chatdetective_queue_updates_backlog
+      targetValue: "200"
+
 message-sender:
   enabled: true
   replicaCount: 1
